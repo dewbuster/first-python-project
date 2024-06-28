@@ -1,0 +1,297 @@
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QMessageBox
+from dbmanager import DBManager, PrintManager
+import os
+
+class Ui_Dialog_Product_Detils(object):
+    
+    def setToday_1(self):
+        self.dateEdit_1.setDate(QtCore.QDate.currentDate())
+        
+    def setToday_2(self):
+        self.dateEdit_2.setDate(QtCore.QDate.currentDate())
+    
+    def del_details(self):
+        try:
+            self.selected = self.tableWidget.item(self.tableWidget.currentRow(), 0).text()
+            self.selected_row = self.tableWidget.currentRow()
+            self.dbManager.connect()
+            self.query = "delete from store where id = ?"
+            self.dbManager.cursor.execute(self.query, (self.selected))
+            self.dbManager.conn.commit()
+            self.dbManager.close()
+            self.tableWidget.removeRow(self.selected_row)
+            msg = QMessageBox()
+            msg.setWindowTitle("삭제완료")
+            msg.setText("삭제 되었습니다.")
+            msg.setIcon(QMessageBox.Information)
+            x = msg.exec()
+        except:
+            msg = QMessageBox()
+            msg.setWindowTitle("오류")
+            msg.setText("삭제할 항목을 선택하세요")
+            msg.setIcon(QMessageBox.Critical)
+            x = msg.exec()
+        
+    def search_details(self):
+        self.date1 = self.dateEdit_1.date().toString('yyyy-MM-dd')
+        self.date2 = self.dateEdit_2.date().toString('yyyy-MM-dd')
+        self.name = self.cBox_name.currentText()
+        
+        if self.name == "전체":
+            self.tableWidget.clearContents()
+            self.dbManager.connect()
+            
+            self.query = "Select id, Date, Product, Pin, Pout, Etcc from store where Date between ? and ? order by Date, id"
+            self.dbManager.cursor.execute(self.query, (self.date1, self.date2))
+            self.rows = self.dbManager.cursor.fetchall()
+            self.tableWidget.setRowCount(len(self.rows))
+
+            self.tbrow = 0
+            for i in self.rows:
+                item = QtWidgets.QTableWidgetItem(str(i[0]))
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                self.tableWidget.setItem(self.tbrow, 0, item)
+                item = QtWidgets.QTableWidgetItem(str(i[1]))
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                self.tableWidget.setItem(self.tbrow, 1, item)
+                item = QtWidgets.QTableWidgetItem(str(i[2]))
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                self.tableWidget.setItem(self.tbrow, 2, item)
+                item = QtWidgets.QTableWidgetItem(str(i[3]))
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                self.tableWidget.setItem(self.tbrow, 3, item)
+                item = QtWidgets.QTableWidgetItem(str(i[4]))
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                self.tableWidget.setItem(self.tbrow, 4, item)
+                item = QtWidgets.QTableWidgetItem(str(i[5]))
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                self.tableWidget.setItem(self.tbrow, 5, item)
+                self.tbrow += 1
+            
+            self.dbManager.close()
+            
+        else:
+            self.tableWidget.clearContents()
+            self.dbManager.connect()
+            
+            self.query = "Select id, Date, Product, Pin, Pout, Etcc from store where Date between ? and ? and Etcc = ? order by Date, id"
+            self.dbManager.cursor.execute(self.query, (self.date1, self.date2, self.name))
+            self.rows = self.dbManager.cursor.fetchall()
+            self.tableWidget.setRowCount(len(self.rows))
+            
+            self.tbrow = 0
+            for i in self.rows:
+                item = QtWidgets.QTableWidgetItem(str(i[0]))
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                self.tableWidget.setItem(self.tbrow, 0, item)
+                item = QtWidgets.QTableWidgetItem(str(i[1]))
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                self.tableWidget.setItem(self.tbrow, 1, item)
+                item = QtWidgets.QTableWidgetItem(str(i[2]))
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                self.tableWidget.setItem(self.tbrow, 2, item)
+                item = QtWidgets.QTableWidgetItem(str(i[3]))
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                self.tableWidget.setItem(self.tbrow, 3, item)
+                item = QtWidgets.QTableWidgetItem(str(i[4]))
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                self.tableWidget.setItem(self.tbrow, 4, item)
+                item = QtWidgets.QTableWidgetItem(str(i[5]))
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                self.tableWidget.setItem(self.tbrow, 5, item)
+                self.tbrow += 1
+            self.dbManager.close()
+    
+    def pprint(self):
+        if self.tableWidget.item(0, 0) == None:
+            return
+        self.date1 = self.dateEdit_1.date().toString('yyyy-MM-dd')
+        self.date2 = self.dateEdit_2.date().toString('yyyy-MM-dd')
+        self.printManager.setprinter()
+        self.directory = "C:/samusil/"
+        self.file_name = self.directory + "product.txt"
+        
+        f = open(self.file_name, 'w')
+        f.write("기간:  "+self.date1+"\t~  "+self.date2)
+        f.write("\n---날짜--------이름---입고----출고--------------상품-------------------------\n")
+        for row in range(self.tableWidget.rowCount()):
+            s0 = self.tableWidget.item(row, 0).text()
+            s1 = self.tableWidget.item(row, 1).text()
+            s2 = self.tableWidget.item(row, 2).text()
+            s3 = self.tableWidget.item(row, 3).text()
+            s4 = self.tableWidget.item(row, 4).text()
+            s5 = self.tableWidget.item(row, 5).text()
+            f.write(s1+"   "+s5+"    "+s3+"\t"+s4+"\t"+s2+"\n")
+        f.write("----------------------------------------------------------------------------------")
+        os.startfile(self.file_name, "print")
+        f.close()
+    
+    def setupUi(self, Dialog_Product_Detils):
+        Dialog_Product_Detils.setObjectName("Dialog_Product_Detils")
+        Dialog_Product_Detils.resize(933, 844)
+        self.tableWidget = QtWidgets.QTableWidget(Dialog_Product_Detils)
+        self.tableWidget.setGeometry(QtCore.QRect(11, 10, 901, 691))
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.tableWidget.setFont(font)
+        self.tableWidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.tableWidget.setDragDropOverwriteMode(False)
+        self.tableWidget.setAlternatingRowColors(True)
+        self.tableWidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.tableWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.tableWidget.setShowGrid(True)
+        self.tableWidget.setGridStyle(QtCore.Qt.SolidLine)
+        self.tableWidget.setColumnCount(6)
+        self.tableWidget.setObjectName("tableWidget")
+        self.tableWidget.setRowCount(0)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setHorizontalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setHorizontalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setHorizontalHeaderItem(4, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setHorizontalHeaderItem(5, item)
+        self.tableWidget.horizontalHeader().setVisible(True)
+        self.tableWidget.horizontalHeader().setCascadingSectionResizes(False)
+        self.tableWidget.verticalHeader().setVisible(False)
+        self.tableWidget.setColumnWidth(1, 130)
+        self.tableWidget.setColumnWidth(2, 320)
+        
+        self.dbManager = DBManager()
+        self.printManager = PrintManager()
+        self.btn_print = QtWidgets.QPushButton(Dialog_Product_Detils, clicked = self.pprint)
+        self.btn_print.setGeometry(QtCore.QRect(820, 740, 71, 51))
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.btn_print.setFont(font)
+        self.btn_print.setAutoDefault(False)
+        self.btn_print.setDefault(False)
+        self.btn_print.setFlat(False)
+        self.btn_print.setObjectName("btn_print")
+        self.label_11 = QtWidgets.QLabel(Dialog_Product_Detils)
+        self.label_11.setGeometry(QtCore.QRect(290, 749, 41, 31))
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.label_11.setFont(font)
+        self.label_11.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_11.setObjectName("label_11")
+        self.dateEdit_2 = QtWidgets.QDateEdit(Dialog_Product_Detils)
+        self.dateEdit_2.setGeometry(QtCore.QRect(330, 740, 121, 41))
+        self.dateEdit_2.setFocusPolicy(QtCore.Qt.NoFocus)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.dateEdit_2.setFont(font)
+        self.dateEdit_2.setAlignment(QtCore.Qt.AlignCenter)
+        self.dateEdit_2.setReadOnly(False)
+        self.dateEdit_2.setCalendarPopup(True)
+        self.dateEdit_2.setObjectName("dateEdit_2")
+        self.btn_search = QtWidgets.QPushButton(Dialog_Product_Detils, clicked = self.search_details)
+        self.btn_search.setGeometry(QtCore.QRect(630, 730, 91, 61))
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.btn_search.setFont(font)
+        self.btn_search.setAutoDefault(False)
+        self.btn_search.setDefault(False)
+        self.btn_search.setFlat(False)
+        self.btn_search.setObjectName("btn_search")
+        self.cBox_name = QtWidgets.QComboBox(Dialog_Product_Detils)
+        self.cBox_name.setGeometry(QtCore.QRect(490, 744, 111, 31))
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.cBox_name.setFont(font)
+        self.cBox_name.setEditable(False)
+        self.cBox_name.setModelColumn(0)
+        self.cBox_name.setObjectName("cBox_name")
+        self.btn_delete = QtWidgets.QPushButton(Dialog_Product_Detils, clicked = self.del_details)
+        self.btn_delete.setGeometry(QtCore.QRect(20, 770, 61, 41))
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.btn_delete.setFont(font)
+        self.btn_delete.setAutoDefault(False)
+        self.btn_delete.setDefault(False)
+        self.btn_delete.setFlat(False)
+        self.btn_delete.setObjectName("btn_delete")
+        self.dateEdit_1 = QtWidgets.QDateEdit(Dialog_Product_Detils)
+        self.dateEdit_1.setGeometry(QtCore.QRect(170, 740, 121, 41))
+        self.dateEdit_1.setFocusPolicy(QtCore.Qt.NoFocus)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.dateEdit_1.setFont(font)
+        self.dateEdit_1.setAlignment(QtCore.Qt.AlignCenter)
+        self.dateEdit_1.setReadOnly(False)
+        self.dateEdit_1.setCalendarPopup(True)
+        self.dateEdit_1.setObjectName("dateEdit_1")
+        
+        self.dateEdit_1.setDate(QtCore.QDate.currentDate())
+        self.dateEdit_2.setDate(QtCore.QDate.currentDate())
+        self._today_button_1 = QtWidgets.QPushButton('&오늘', clicked=self.setToday_1)
+        self.dateEdit_1.calendarWidget().layout().addWidget(self._today_button_1)
+        self._today_button_2 = QtWidgets.QPushButton('&오늘', clicked=self.setToday_2)
+        self.dateEdit_2.calendarWidget().layout().addWidget(self._today_button_2)
+        
+        self.dateEdit_1.wheelEvent = lambda event: None
+        self.dateEdit_2.wheelEvent = lambda event: None
+        self.cBox_name.wheelEvent = lambda event: None
+
+        self.retranslateUi(Dialog_Product_Detils)
+        QtCore.QMetaObject.connectSlotsByName(Dialog_Product_Detils)
+
+    def retranslateUi(self, Dialog_Product_Detils):
+        _translate = QtCore.QCoreApplication.translate
+        Dialog_Product_Detils.setWindowTitle(_translate("Dialog_Product_Detils", "Dialog"))
+        item = self.tableWidget.horizontalHeaderItem(0)
+        item.setText(_translate("Dialog_Product_Detils", "ID"))
+        item = self.tableWidget.horizontalHeaderItem(1)
+        item.setText(_translate("Dialog_Product_Detils", "날짜"))
+        item = self.tableWidget.horizontalHeaderItem(2)
+        item.setText(_translate("Dialog_Product_Detils", "상품명"))
+        item = self.tableWidget.horizontalHeaderItem(3)
+        item.setText(_translate("Dialog_Product_Detils", "입고"))
+        item = self.tableWidget.horizontalHeaderItem(4)
+        item.setText(_translate("Dialog_Product_Detils", "출고"))
+        item = self.tableWidget.horizontalHeaderItem(5)
+        item.setText(_translate("Dialog_Product_Detils", "비고"))
+        self.btn_print.setText(_translate("Dialog_Product_Detils", "프린트"))
+        self.label_11.setText(_translate("Dialog_Product_Detils", "~"))
+        self.btn_search.setText(_translate("Dialog_Product_Detils", "조회"))
+        self.btn_delete.setText(_translate("Dialog_Product_Detils", "삭제"))
+
+
+if __name__ == "__main__":
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    Dialog_Product_Detils = QtWidgets.QDialog()
+    ui = Ui_Dialog_Product_Detils()
+    ui.setupUi(Dialog_Product_Detils)
+    Dialog_Product_Detils.show()
+    sys.exit(app.exec_())
